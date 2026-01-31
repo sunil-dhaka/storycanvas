@@ -1,0 +1,66 @@
+{
+  "name": "storycanvas",
+  "version": "0.2.0",
+  "description": "Transform books into multimedia content using Google Gemini AI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "storycanvas": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/cli/index.js",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "gemini",
+    "ai",
+    "book",
+    "video",
+    "illustration",
+    "tts",
+    "text-to-speech",
+    "cli"
+  ],
+  "author": "Sunil",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sunil-dhaka/storycanvas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sunil-dhaka/storycanvas/issues"
+  },
+  "homepage": "https://github.com/sunil-dhaka/storycanvas#readme",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "@google/genai": "^1.37.0",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "cosmiconfig": "^9.0.0",
+    "epub2": "^3.0.2",
+    "fluent-ffmpeg": "^2.1.3",
+    "ffmpeg-static": "^5.2.0",
+    "ora": "^8.1.1",
+    "pdf-parse": "^1.1.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/node": "^22.10.0",
+    "@types/pdf-parse": "^1.1.4",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "apiKey": "YOUR_GEMINI_API_KEY_HERE",
+  "models": {
+    "text": "gemini-2.5-flash",
+    "image": "imagen-4.0-fast-generate-001",
+    "tts": "gemini-2.5-flash-preview-tts",
+    "video": "veo-3.1-fast"
+  },
+  "image": {
+    "maxCharacterImages": 30,
+    "maxSceneImages": 50,
+    "aspectRatio": "9:16",
+    "personGeneration": "allow_adult",
+    "retryAttempts": 3,
+    "retryDelay": 2
+  },
+  "video": {
+    "mode": "slideshow",
+    "fps": 0.5,
+    "resolution": "1080p"
+  },
+  "tts": {
+    "enabled": true,
+    "voice": "Kore"
+  },
+  "audio": {
+    "musicVolume": 0.3,
+    "narrationVolume": 1.0,
+    "supportedFormats": [".mp3", ".m4a", ".wav", ".aac", ".ogg"]
+  },
+  "directories": {
+    "output": "./storycanvas-output",
+    "music": "./music",
+    "books": "./books"
+  }
+}
