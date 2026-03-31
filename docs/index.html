@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryCanvas - Transform books into cinematic videos</title>
+  <meta name="description" content="One CLI command. AI illustrations, narration, and video -- all from a single text file.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230c1022'/><text x='16' y='22' font-size='16' font-family='serif' font-weight='700' fill='%23f59e0b' text-anchor='middle'>S</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-deep: #0c1022;
+      --bg-surface: #131832;
+      --bg-card: #1a2040;
+      --accent-warm: #f59e0b;
+      --accent-coral: #fb7185;
+      --accent-violet: #8b5cf6;
+      --text-primary: #eef2ff;
+      --text-secondary: #94a3b8;
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- NAV --- */
+    .nav {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      padding: 12px 32px;
+      background: rgba(19, 24, 50, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(238, 242, 255, 0.08);
+      border-radius: 999px;
+      font-size: 14px;
+    }
+
+    .nav-logo {
+      font-family: var(--font-mono);
+      font-weight: 500;
+      font-size: 15px;
+      color: var(--text-primary);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+      white-space: nowrap;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+    }
+
+    /* --- HERO --- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      overflow: hidden;
+    }
+
+    .hero-spotlight {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 800px;
+      height: 800px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, rgba(139, 92, 246, 0.06) 40%, transparent 70%);
+      filter: blur(60px);
+      animation: spotlight 12s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes spotlight {
+      0% {
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        background: radial-gradient(circle, rgba(245, 158, 11, 0.14) 0%, rgba(139, 92, 246, 0.07) 40%, transparent 70%);
+      }
+      33% {
+        transform: translate(-45%, -55%) scale(1.1) rotate(5deg);
+        background: radial-gradient(circle, rgba(251, 113, 133, 0.14) 0%, rgba(245, 158, 11, 0.07) 40%, transparent 70%);
+      }
+      66% {
+        transform: translate(-55%, -45%) scale(0.95) rotate(-3deg);
+        background: radial-gradient(circle, rgba(139, 92, 246, 0.14) 0%, rgba(251, 113, 133, 0.07) 40%, transparent 70%);
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1.05) rotate(2deg);
+        background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, rgba(139, 92, 246, 0.08) 40%, transparent 70%);
+      }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+    }
+
+    .hero h1 {
+      font-family: var(--font-heading);
+      font-size: clamp(40px, 6vw, 68px);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--accent-warm), var(--accent-coral), var(--accent-violet));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 15px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-warm), var(--accent-coral));
+      color: #0c1022;
+      box-shadow: 0 4px 24px rgba(245, 158, 11, 0.25);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1.5px solid rgba(238, 242, 255, 0.15);
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(238, 242, 255, 0.3);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-install {
+      display: inline-block;
+      background: var(--bg-card);
+      border: 1px solid rgba(238, 242, 255, 0.06);
+      border-radius: 12px;
+      padding: 14px 28px;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      color: var(--accent-warm);
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+
+    .hero-install:hover {
+      border-color: rgba(245, 158, 11, 0.3);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.08);
+    }
+
+    .hero-install .prefix {
+      color: var(--text-secondary);
+    }
+
+    /* --- SECTIONS --- */
+    section {
+      padding: 100px 24px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: clamp(32px, 4vw, 48px);
+      text-align: center;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .section-subtitle {
+      color: var(--text-secondary);
+      text-align: center;
+      font-size: 17px;
+      margin-bottom: 64px;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* --- HOW IT WORKS --- */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      position: relative;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 52px;
+      left: calc(16.666% + 24px);
+      right: calc(16.666% + 24px);
+      height: 2px;
+      border-top: 2px dashed rgba(238, 242, 255, 0.1);
+    }
+
+    .step {
+      text-align: center;
+      padding: 0 20px;
+      position: relative;
+    }
+
+    .step-number {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-heading);
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step:nth-child(1) .step-number {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+      color: var(--accent-warm);
+      border: 1.5px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .step:nth-child(2) .step-number {
+      background: linear-gradient(135deg, rgba(251, 113, 133, 0.15), rgba(251, 113, 133, 0.05));
+      color: var(--accent-coral);
+      border: 1.5px solid rgba(251, 113, 133, 0.3);
+    }
+
+    .step:nth-child(3) .step-number {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05));
+      color: var(--accent-violet);
+      border: 1.5px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .step h3 {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .step p {
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    /* --- FEATURES --- */
+    .feature {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      margin-bottom: 96px;
+    }
+
+    .feature:last-child {
+      margin-bottom: 0;
+    }
+
+    .feature.reverse .feature-text {
+      order: 2;
+    }
+
+    .feature.reverse .feature-visual {
+      order: 1;
+    }
+
+    .feature-text h3 {
+      font-family: var(--font-heading);
+      font-size: clamp(26px, 3vw, 34px);
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-text p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .feature-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .visual-card {
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 4 / 3;
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid rgba(238, 242, 255, 0.06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Storyboard frame visual */
+    .visual-storyboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      padding: 24px;
+      height: 100%;
+    }
+
+    .storyboard-frame {
+      border: 2px dashed rgba(245, 158, 11, 0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .storyboard-frame::after {
+      content: '';
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.15), transparent);
+    }
+
+    .storyboard-frame:nth-child(2)::after {
+      background: radial-gradient(circle, rgba(251, 113, 133, 0.15), transparent);
+    }
+
+    .storyboard-frame:nth-child(3)::after {
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.15), transparent);
+    }
+
+    .storyboard-frame:nth-child(4)::after {
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.1), transparent);
+    }
+
+    /* Waveform visual */
+    .visual-waveform {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 100%;
+      padding: 0 40px;
+    }
+
+    .wave-bar {
+      width: 4px;
+      border-radius: 2px;
+      background: linear-gradient(to top, var(--accent-coral), var(--accent-violet));
+      opacity: 0.5;
+    }
+
+    /* Film frame visual */
+    .visual-film {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      padding: 24px;
+      gap: 8px;
+    }
+
+    .film-strip {
+      width: 80%;
+      height: 40px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 6px;
+    }
+
+    .film-strip .sprocket {
+      width: 8px;
+      height: 12px;
+      border-radius: 2px;
+      background: rgba(238, 242, 255, 0.06);
+      flex-shrink: 0;
+    }
+
+    .film-strip .frame-gap {
+      flex: 1;
+      height: 24px;
+      border-radius: 2px;
+    }
+
+    .film-strip:nth-child(1) .frame-gap { background: rgba(245, 158, 11, 0.1); }
+    .film-strip:nth-child(2) .frame-gap { background: rgba(251, 113, 133, 0.1); }
+    .film-strip:nth-child(3) .frame-gap { background: rgba(139, 92, 246, 0.1); }
+    .film-strip:nth-child(4) .frame-gap { background: rgba(245, 158, 11, 0.08); }
+    .film-strip:nth-child(5) .frame-gap { background: rgba(251, 113, 133, 0.08); }
+
+    /* Play button visual */
+    .visual-play {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .play-circle {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 2px solid rgba(139, 92, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(251, 113, 133, 0.05));
+    }
+
+    .play-triangle {
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 18px 0 18px 30px;
+      border-color: transparent transparent transparent rgba(139, 92, 246, 0.5);
+      margin-left: 4px;
+    }
+
+    /* --- TERMINAL --- */
+    .terminal-section {
+      padding: 80px 24px;
+    }
+
+    .terminal {
+      max-width: 780px;
+      margin: 0 auto;
+      background: #0d1117;
+      border-radius: 16px;
+      border: 1px solid rgba(238, 242, 255, 0.06);
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+    }
+
+    .terminal-chrome {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 20px;
+      background: rgba(238, 242, 255, 0.03);
+      border-bottom: 1px solid rgba(238, 242, 255, 0.05);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green { background: #28c840; }
+
+    .terminal-title {
+      flex: 1;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-right: 44px;
+    }
+
+    .terminal-body {
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      overflow-x: auto;
+    }
+
+    .terminal-body .cmd {
+      color: var(--text-primary);
+    }
+
+    .terminal-body .prompt {
+      color: var(--accent-warm);
+    }
+
+    .terminal-body .flag {
+      color: var(--accent-coral);
+    }
+
+    .terminal-body .value {
+      color: var(--accent-violet);
+    }
+
+    .terminal-body .success {
+      color: #34d399;
+    }
+
+    .terminal-body .info {
+      color: var(--accent-warm);
+    }
+
+    .terminal-body .dim {
+      color: #4b5563;
+    }
+
+    /* --- INSTALL --- */
+    .install-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 640px;
+      margin: 0 auto 32px;
+    }
+
+    .install-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(238, 242, 255, 0.06);
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .install-card-label {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .install-cmd {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      color: var(--accent-warm);
+      background: var(--bg-surface);
+      padding: 12px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: box-shadow 0.2s, border-color 0.2s;
+      border: 1px solid rgba(238, 242, 255, 0.04);
+      position: relative;
+    }
+
+    .install-cmd:hover {
+      border-color: rgba(245, 158, 11, 0.2);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.06);
+    }
+
+    .install-note {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    .install-note code {
+      font-family: var(--font-mono);
+      color: var(--accent-warm);
+      background: var(--bg-card);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    /* --- COPIED TOAST --- */
+    .copied-toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--accent-warm);
+      color: #0c1022;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 24px;
+      border-radius: 999px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 200;
+    }
+
+    .copied-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* --- FOOTER --- */
+    .footer {
+      border-top: 1px solid rgba(238, 242, 255, 0.06);
+      padding: 48px 24px;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-brand {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .footer-center {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .footer-center a {
+      color: var(--accent-warm);
+      text-decoration: none;
+    }
+
+    .footer-center a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--text-primary);
+    }
+
+    .footer-license {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .nav {
+        padding: 12px 24px;
+      }
+
+      .hero {
+        padding: 100px 20px 60px;
+      }
+
+      .hero-subtitle {
+        font-size: 16px;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+        gap: 48px;
+        max-width: 400px;
+      }
+
+      .steps::before {
+        top: 0;
+        bottom: 0;
+        left: 28px;
+        right: auto;
+        width: 2px;
+        height: auto;
+        border-top: none;
+        border-left: 2px dashed rgba(238, 242, 255, 0.1);
+      }
+
+      .step {
+        text-align: left;
+        padding-left: 72px;
+      }
+
+      .step-number {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+
+      .feature {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        margin-bottom: 64px;
+      }
+
+      .feature.reverse .feature-text {
+        order: 1;
+      }
+
+      .feature.reverse .feature-visual {
+        order: 2;
+      }
+
+      .install-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .visual-card {
+        max-width: 320px;
+      }
+    }
+
+    /* --- REDUCED MOTION --- */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-spotlight {
+        animation: none;
+      }
+
+      html {
+        scroll-behavior: auto;
+      }
+
+      .btn,
+      .install-cmd,
+      .hero-install,
+      .nav-links a,
+      .footer-links a,
+      .copied-toast {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <a href="#" class="nav-logo">StoryCanvas</a>
+    <ul class="nav-links">
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#install">Install</a></li>
+      <li><a href="https://github.com/sunil-dhaka/storycanvas" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-spotlight"></div>
+    <div class="hero-content">
+      <h1>
+        Transform books into<br>
+        <span class="gradient-text">cinematic videos</span>
+      </h1>
+      <p class="hero-subtitle">
+        One CLI command. AI illustrations, narration, and video &mdash; all from a single text file.
+      </p>
+      <div class="hero-ctas">
+        <a href="#install" class="btn btn-primary">Get Started</a>
+        <a href="https://github.com/sunil-dhaka/storycanvas" class="btn btn-ghost" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+      <div class="hero-install" data-copy="npx storycanvas" role="button" tabindex="0" aria-label="Copy install command">
+        <span class="prefix">$ </span>npx storycanvas
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works">
+    <div class="container">
+      <h2 class="section-title">How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Feed a book</h3>
+          <p>PDF, EPUB, TXT, Markdown, or pick from 70,000+ Project Gutenberg titles.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>AI builds the vision</h3>
+          <p>Gemini analyzes your text. Imagen 4 illustrates characters and scenes. TTS narrates cohesively.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Export your video</h3>
+          <p>Slideshow or Veo AI video mode. YouTube-ready with auto-generated metadata.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="container">
+      <h2 class="section-title">Features</h2>
+      <div style="margin-top: 64px;">
+
+        <!-- Feature 1 -->
+        <div class="feature">
+          <div class="feature-text">
+            <h3>AI Illustrations</h3>
+            <p>Characters and scenes generated with Imagen 4. Consistent art style across all images, analyzed from your book's tone.</p>
+          </div>
+          <div class="feature-visual">
+            <div class="visual-card">
+              <div class="visual-storyboard">
+                <div class="storyboard-frame"></div>
+                <div class="storyboard-frame"></div>
+                <div class="storyboard-frame"></div>
+                <div class="storyboard-frame"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature reverse">
+          <div class="feature-text">
+            <h3>Cohesive Narration</h3>
+            <p>30+ TTS voices with natural flow. Multi-turn Gemini chat maintains narrative consistency across all scenes.</p>
+          </div>
+          <div class="feature-visual">
+            <div class="visual-card">
+              <div class="visual-waveform" id="waveform"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature">
+          <div class="feature-text">
+            <h3>Two Video Modes</h3>
+            <p>Slideshow mode for image-based videos, or Veo 3.1 for AI-generated cinematic footage. 720p to 4K.</p>
+          </div>
+          <div class="feature-visual">
+            <div class="visual-card">
+              <div class="visual-film">
+                <div class="film-strip"><span class="sprocket"></span><span class="sprocket"></span><div class="frame-gap"></div><span class="sprocket"></span><span class="sprocket"></span></div>
+                <div class="film-strip"><span class="sprocket"></span><span class="sprocket"></span><div class="frame-gap"></div><span class="sprocket"></span><span class="sprocket"></span></div>
+                <div class="film-strip"><span class="sprocket"></span><span class="sprocket"></span><div class="frame-gap"></div><span class="sprocket"></span><span class="sprocket"></span></div>
+                <div class="film-strip"><span class="sprocket"></span><span class="sprocket"></span><div class="frame-gap"></div><span class="sprocket"></span><span class="sprocket"></span></div>
+                <div class="film-strip"><span class="sprocket"></span><span class="sprocket"></span><div class="frame-gap"></div><span class="sprocket"></span><span class="sprocket"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature reverse">
+          <div class="feature-text">
+            <h3>YouTube Ready</h3>
+            <p>Auto-generated titles, descriptions, and SEO tags. Multiple aspect ratios: YouTube, Shorts, TikTok.</p>
+          </div>
+          <div class="feature-visual">
+            <div class="visual-card">
+              <div class="visual-play">
+                <div class="play-circle">
+                  <div class="play-triangle"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Terminal Demo -->
+  <section class="terminal-section">
+    <div class="container">
+      <div class="terminal">
+        <div class="terminal-chrome">
+          <span class="terminal-dot red"></span>
+          <span class="terminal-dot yellow"></span>
+          <span class="terminal-dot green"></span>
+          <span class="terminal-title">storycanvas</span>
+        </div>
+        <div class="terminal-body">
+<span class="prompt">$</span> <span class="cmd">storycanvas create</span> <span class="flag">--file</span> <span class="value">gatsby.epub</span> <span class="flag">--stages</span> <span class="value">illustrations,narration,video</span>
+
+  <span class="info">Analyzing "The Great Gatsby" by F. Scott Fitzgerald...</span>
+  Art style: Art Deco, 1920s New York, warm golden tones
+
+  Generating 5 character illustrations with Imagen 4...  <span class="success">done</span>
+  Generating 12 scene illustrations...                   <span class="success">done</span>
+  Creating narration with voice "Kore"...                <span class="success">done</span>
+  Building slideshow video (1080p, 16:9)...              <span class="success">done</span>
+  Generating YouTube metadata...                         <span class="success">done</span>
+
+  <span class="dim">Output: ./storycanvas-output/the-great-gatsby/</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section id="install">
+    <div class="container">
+      <h2 class="section-title">Get Started</h2>
+      <p class="section-subtitle">Node.js 22+ and a free Gemini API key.</p>
+      <div class="install-cards">
+        <div class="install-card">
+          <div class="install-card-label">npm</div>
+          <div class="install-cmd" data-copy="npm install -g storycanvas" role="button" tabindex="0" aria-label="Copy npm install command">npm install -g storycanvas</div>
+        </div>
+        <div class="install-card">
+          <div class="install-card-label">npx</div>
+          <div class="install-cmd" data-copy="npx storycanvas" role="button" tabindex="0" aria-label="Copy npx command">npx storycanvas</div>
+        </div>
+      </div>
+      <p class="install-note">Then run <code>storycanvas onboard</code> to set up your API key.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-brand">StoryCanvas</span>
+      <span class="footer-center">
+        Built by <a href="https://sunil-dhaka.github.io" target="_blank" rel="noopener">Sunil Dhaka</a>
+        <span class="footer-license"> &middot; MIT License</span>
+      </span>
+      <div class="footer-links">
+        <a href="https://github.com/sunil-dhaka/storycanvas" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.npmjs.com/package/storycanvas" target="_blank" rel="noopener">npm</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Copied toast -->
+  <div class="copied-toast" id="copiedToast">Copied!</div>
+
+  <script>
+    // Generate waveform bars
+    (function () {
+      var waveform = document.getElementById('waveform');
+      if (!waveform) return;
+      var count = 48;
+      for (var i = 0; i < count; i++) {
+        var bar = document.createElement('div');
+        bar.className = 'wave-bar';
+        var h = 12 + Math.sin(i * 0.3) * 30 + Math.sin(i * 0.7) * 20 + Math.random() * 15;
+        bar.style.height = Math.max(6, h) + 'px';
+        waveform.appendChild(bar);
+      }
+    })();
+
+    // Copy to clipboard
+    (function () {
+      var toast = document.getElementById('copiedToast');
+      var timer;
+
+      function showToast() {
+        clearTimeout(timer);
+        toast.classList.add('show');
+        timer = setTimeout(function () {
+          toast.classList.remove('show');
+        }, 1500);
+      }
+
+      document.querySelectorAll('[data-copy]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var text = el.getAttribute('data-copy');
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(showToast);
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast();
+          }
+        });
+
+        el.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            el.click();
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
